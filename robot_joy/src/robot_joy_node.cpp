@@ -1,22 +1,32 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <sensor_msgs/Joy.h>
+#include <move_base_msgs/MoveBaseAction.h>
+#include <actionlib/client/simple_action_client.h>
+
+typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> Client;
 
 // create the TeleopRobot class and define the joyCallback function that will take a joy msg
 class TeleopRobot
 {
 public:
   TeleopRobot();
+  //  Client client("move_base", true);
+  //};
+  void publish_cmd();
+  
 
 private:
   void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
   ros::NodeHandle nh_;
+  //Client client("move_base", true);
 
   int linear_, angular_;   // used to define which axes of the joystick will control our robot
   //char topic_name[20]="cmd_vel";
   double l_scale_, a_scale_;
   ros::Publisher vel_pub_;
   ros::Subscriber joy_sub_;
+  geometry_msgs::Twist twist2;
 
 };
 
@@ -35,22 +45,37 @@ TeleopRobot::TeleopRobot(): linear_(1), angular_(2)
   joy_sub_ = nh_.subscribe<sensor_msgs::Joy>("joy", 10, &TeleopRobot::joyCallback, this);
 }
 
+void TeleopRobot::publish_cmd(){
+  vel_pub_.publish(twist2);
+}
+
 
 void TeleopRobot::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 {
-  geometry_msgs::Twist twist;
+  //geometry_msgs::Twist twist;
 
   // take the data from the joystick and manipulate it by scaling it and using independent axes to control the linear and angular velocities of the robot
-  twist.angular.z = a_scale_*joy->axes[angular_];
-  twist.linear.x = l_scale_*joy->axes[linear_];
+  //twist.angular.z = a_scale_*joy->axes[angular_];
+  //twist.linear.x = l_scale_*joy->axes[linear_];
+  
+  twist2.angular.z = a_scale_*joy->axes[angular_];
+  twist2.linear.x = l_scale_*joy->axes[linear_];
 
-  vel_pub_.publish(twist); 
+  vel_pub_.publish(twist2); 
 }
+
 int main(int argc, char** argv)
 {
   // initialize our ROS node, create a teleop_robot, and spin our node until Ctrl-C is pressed
   ros::init(argc, argv, "teleop_robot");
   TeleopRobot teleop_robot;
 
-  ros::spin();
+  // subash is adding more
+  ros::Rate rate(30);
+  while(ros::ok()){
+      teleop_robot.publish_cmd();
+      ros::spinOnce();
+      rate.sleep();
+  }
+  //ros::spin();
 }
