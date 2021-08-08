@@ -10,6 +10,7 @@ project(robot_joy)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   turtlesim
+  joy
 )
 
 ## System dependencies are found with CMake's conventions
